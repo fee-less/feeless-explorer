@@ -1,103 +1,117 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useState } from "react";
+import Card from "./components/Card";
+import IsolatedCard from "./components/IsolatedCard";
+import { Note, Title } from "./components/Texts";
+import {
+  Block as BlockType,
+  calculateReward,
+  FeelessClient,
+} from "feeless-utils";
+import Block from "./components/custom/Block";
+import { nodeHTTP, nodeWS } from "./components/custom/static";
+import CopyPill from "./components/CopyPill";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [blocks, setBlocks] = useState<BlockType[]>([]);
+  const [hashrate, setHashRate] = useState(0);
+  const [diff, setDiff] = useState(0);
+  const [supply, setSupply] = useState(0);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    (async () => {
+      const fc = new FeelessClient(
+        nodeWS,
+        nodeHTTP,
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      );
+
+      const diff = (await fetch(nodeHTTP + "/diff").then(res => res.json())).diff;
+      setHashRate(
+        Number((BigInt(
+          "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        ) / BigInt("0x" + diff)) / BigInt(30))
+      );
+      setDiff(
+        Number(
+          BigInt(
+            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          ) / BigInt("0x" + diff)
+        )
+      );
+
+      const height = (await fc.getBlockHeight()) - 1;
+      const blockPromises = Array.from({ length: 15 }, (_, i) =>
+        fc.getBlock(height - i)
+      );
+      const blocks = await Promise.all(blockPromises);
+      setBlocks(blocks);
+
+      let supply = 5000000;
+      for (let i = 0; i < height; i++) {
+        supply += calculateReward(i);
+      }
+      setSupply(supply);
+    })();
+  }, []);
+
+  const formatHashrate = (hr: number): string => {
+    if (hr === 0) return "0 H/s";
+
+    const units = ["H/s", "KH/s", "MH/s", "GH/s", "TH/s", "PH/s", "EH/s"];
+    const i = Math.floor(Math.log(hr) / Math.log(1000));
+    const value = hr / Math.pow(1000, i);
+
+    return `${value.toFixed(2)} ${units[i]}`;
+  };
+  const formatDiff = (d: number): string => {
+    if (d === 0) return "0";
+
+    const units = ["", "K", "M", "G", "T", "P", "E"];
+    const i = Math.floor(Math.log(d) / Math.log(1000));
+    const value = d / Math.pow(1000, i);
+
+    return `${value.toFixed(2)} ${units[i]}`;
+  };
+
+  const formatter = new Intl.NumberFormat();
+
+  return (
+    <div>
+      <Card>
+        <Title>FeeLess Explorer</Title>
+        <p>
+          Track transactions, view balances, it's all here, a few clicks away.
+        </p>
+
+        <IsolatedCard>
+          <Title>Network Statistics</Title>
+          <div className="flex items-center">
+            <Note>Hashrate:</Note>
+            <CopyPill
+              text={formatHashrate(hashrate)}
+              copyText={hashrate + ""}
+              inline
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          </div>
+          <div className="flex items-center">
+            <Note>Difficulty:</Note>
+            <CopyPill text={formatDiff(diff)} copyText={diff + ""} inline />
+          </div>
+          <div className="flex items-center">
+            <Note>Circulating Supply:</Note>
+            <CopyPill text={formatter.format(supply)} copyText={supply + ""} inline />
+          </div>
+        </IsolatedCard>
+
+        <IsolatedCard>
+          <Title>Latest Blocks</Title>
+          <Note>Ordered from newest to latest.</Note>
+          {blocks.map((b) => (
+            <Block key={b.nonce} block={b} />
+          ))}
+        </IsolatedCard>
+      </Card>
     </div>
   );
 }
