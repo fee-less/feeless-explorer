@@ -7,6 +7,7 @@ import {
   Block as BlockType,
   calculateReward,
   FeelessClient,
+  fPointsToFLSS,
 } from "feeless-utils";
 import Block from "./components/custom/Block";
 import { nodeHTTP, nodeWS } from "./components/custom/static";
@@ -47,11 +48,7 @@ export default function Home() {
       const blocks = await Promise.all(blockPromises);
       setBlocks(blocks);
 
-      let supply = 5000000;
-      for (let i = 0; i < height; i++) {
-        supply += calculateReward(i);
-      }
-      setSupply(supply);
+      setSupply(fPointsToFLSS(await fetch(nodeHTTP + "/balance/network").then(res => res.json())));
     })();
   }, []);
 
