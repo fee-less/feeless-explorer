@@ -1,7 +1,7 @@
 import { DEV_WALLET, Transaction } from "feeless-utils";
 
-export const nodeHTTP = "http://localhost:8000";
-export const nodeWS = "ws://localhost:6061";
+export const nodeHTTP = "https://node.explorer.fee-less.com";
+export const nodeWS = "wss://node.explorer.fee-less.com/ws";
 export const categorizeTx = (
   tx: Transaction
 ):
