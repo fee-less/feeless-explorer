@@ -15,14 +15,11 @@ import {
 } from "@/app/components/custom/static";
 import { TransactionHistory } from "feeless-utils/dist/client";
 import Tag from "@/app/components/Tag";
+import { useParams } from "next/navigation";
 
-export default function Address({
-  params: paramsPromise,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const params = use(paramsPromise);
-  const addr = params.slug;
+export default function Address() {
+  const { slug } = useParams();
+  const addr = slug as string;
 
   const [txHistory, setTxHistory] = useState<TransactionHistory[]>([]);
   const [tokens, setTokens] = useState<string[]>([]);
