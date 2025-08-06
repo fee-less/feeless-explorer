@@ -48,7 +48,7 @@ export default function Home() {
       const blocks = await Promise.all(blockPromises);
       setBlocks(blocks);
 
-      setSupply(fPointsToFLSS(await fetch(nodeHTTP + "/balance/network").then(res => res.json())));
+      setSupply(-fPointsToFLSS(await fetch(nodeHTTP + "/balance/network").then(res => res.json())));
     })();
   }, []);
 
