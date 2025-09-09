@@ -14,7 +14,7 @@ export default function SearchBar() {
   return (
     <div className="relative w-full px-4 bg-black">
       <div className="flex items-center gap-4">
-        <SubTitle className="whitespace-nowrap">FeeLess Explorer</SubTitle>
+        <SubTitle className="whitespace-nowrap hover:cursor-pointer" onClick={() => document.location.href = "/"}>FeeLess Explorer</SubTitle>
         <div className="flex-1">
           <TextInput
             onFocus={() => setFocused(true)}

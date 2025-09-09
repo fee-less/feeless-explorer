@@ -10,28 +10,43 @@ import {
   fPointsToFLSS,
 } from "feeless-utils";
 import Block from "./components/custom/Block";
-import { nodeHTTP, nodeWS } from "./components/custom/static";
+import {
+  formatShortAddress,
+  nodeHTTP,
+  nodeWS,
+} from "./components/custom/static";
 import CopyPill from "./components/CopyPill";
 
 export default function Home() {
   const [blocks, setBlocks] = useState<BlockType[]>([]);
+  const [rich, setRich] = useState<{ address: string; balance: number }[]>([]);
   const [hashrate, setHashRate] = useState(0);
   const [diff, setDiff] = useState(0);
   const [supply, setSupply] = useState(0);
+  const [height, setHeight] = useState(0);
 
   useEffect(() => {
     (async () => {
+      fetch(nodeHTTP + "/rich")
+        .then((res) => res.json())
+        .then((rich) => setRich(rich));
+
       const fc = new FeelessClient(
         nodeWS,
         nodeHTTP,
         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
       );
 
-      const diff = (await fetch(nodeHTTP + "/diff").then(res => res.json())).diff;
+      const diff = (await fetch(nodeHTTP + "/diff").then((res) => res.json()))
+        .diff;
       setHashRate(
-        Number((BigInt(
-          "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-        ) / BigInt("0x" + diff)) / BigInt(30))
+        Number(
+          BigInt(
+            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          ) /
+            BigInt("0x" + diff) /
+            BigInt(30)
+        )
       );
       setDiff(
         Number(
@@ -42,13 +57,19 @@ export default function Home() {
       );
 
       const height = (await fc.getBlockHeight()) - 1;
+      setHeight(height);
+
       const blockPromises = Array.from({ length: 15 }, (_, i) =>
         fc.getBlock(height - i)
       );
       const blocks = await Promise.all(blockPromises);
       setBlocks(blocks);
 
-      setSupply(-fPointsToFLSS(await fetch(nodeHTTP + "/balance/network").then(res => res.json())));
+      setSupply(
+        -fPointsToFLSS(
+          await fetch(nodeHTTP + "/balance/network").then((res) => res.json())
+        )
+      );
     })();
   }, []);
 
@@ -97,7 +118,19 @@ export default function Home() {
           </div>
           <div className="flex items-center">
             <Note>Circulating Supply:</Note>
-            <CopyPill text={formatter.format(supply)} copyText={supply + ""} inline />
+            <CopyPill
+              text={formatter.format(supply)}
+              copyText={supply + ""}
+              inline
+            />
+          </div>
+          <div className="flex items-center">
+            <Note>Blockchain Height:</Note>
+            <CopyPill
+              text={formatter.format(height)}
+              copyText={height + ""}
+              inline
+            />
           </div>
         </IsolatedCard>
 
@@ -106,6 +139,30 @@ export default function Home() {
           <Note>Ordered from newest to latest.</Note>
           {blocks.map((b) => (
             <Block key={b.nonce} block={b} />
+          ))}
+        </IsolatedCard>
+        <IsolatedCard>
+          <Title>Rich Address List</Title>
+          <Note>Ordered from most wealthy.</Note>
+          {rich.map((r) => (
+            <div key={r.address} className="w-full flex items-center justify-evenly">
+              <div className="flex items-center">
+                <Note>Address:</Note>
+                <CopyPill
+                  text={formatShortAddress(r.address)}
+                  copyText={r.address}
+                  inline
+                />
+              </div>
+              <div className="flex items-center">
+                <Note>Balance:</Note>
+                <CopyPill
+                  text={fPointsToFLSS(r.balance) + " FLSS"}
+                  copyText={r.balance + ""}
+                  inline
+                />
+              </div>
+            </div>
           ))}
         </IsolatedCard>
       </Card>

@@ -16,18 +16,21 @@ import {
 import { TransactionHistory } from "feeless-utils/dist/client";
 import Tag from "@/app/components/Tag";
 import { useParams } from "next/navigation";
+import Button from "@/app/components/Button"; // your button component
 
 export default function Address() {
   const { slug } = useParams();
   const addr = slug as string;
 
   const [txHistory, setTxHistory] = useState<TransactionHistory[]>([]);
+  const [displayedTxs, setDisplayedTxs] = useState<TransactionHistory[]>([]);
   const [tokens, setTokens] = useState<string[]>([]);
   const [tokenBalances, setTokenBalances] = useState<Record<string, number>>(
     {}
   );
   const [balance, setBalance] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [loadedCount, setLoadedCount] = useState(100);
 
   useEffect(() => {
     (async () => {
@@ -39,7 +42,7 @@ export default function Address() {
       );
       await fc.init();
 
-      // Native baalnce
+      // Native balance
       setBalance(
         await fetch(nodeHTTP + "/balance/" + addr).then((res) => res.json())
       );
@@ -47,6 +50,7 @@ export default function Address() {
       // TX history
       const hist = await fc.getAddressHistory(addr);
       setTxHistory(hist);
+      setDisplayedTxs(hist.slice(0, 100)); // show first 100
       setLoading(false);
 
       // Tokens
@@ -66,6 +70,12 @@ export default function Address() {
       setTokenBalances(balances);
     })();
   }, [addr]);
+
+  const handleShowMore = () => {
+    const nextCount = loadedCount + 100;
+    setDisplayedTxs(txHistory.slice(0, nextCount));
+    setLoadedCount(nextCount);
+  };
 
   return (
     <div className="p-4 sm:p-10">
@@ -123,9 +133,15 @@ export default function Address() {
 
           {!loading && txHistory.length > 0 && (
             <div className="space-y-3 mt-4">
-              {txHistory.map((tx, idx) => (
+              {displayedTxs.map((tx, idx) => (
                 <TxHistoryItem key={`${tx.blockHeight}-${idx}`} tx={tx} />
               ))}
+
+              {displayedTxs.length < txHistory.length && (
+                <div className="mt-4 flex justify-center">
+                  <Button onClick={handleShowMore}>Show More</Button>
+                </div>
+              )}
             </div>
           )}
         </IsolatedCard>
