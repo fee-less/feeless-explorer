@@ -43,7 +43,7 @@ export default function Block({ block }: { block: BlockType }) {
 
       <Note>{block.transactions.length} transactions:</Note>
       <div>
-        {block.transactions.map((tx, i) => (
+        {(block.transactions as Transaction[]).map((tx, i) => (
           <div key={Math.random()}>
             <TransactionItem tx={tx} />
             {i !== block.transactions.length - 1 && (
